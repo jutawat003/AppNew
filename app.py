@@ -48,7 +48,7 @@ def load_model():
 
 model = load_model()
 
-# ส่วนรับข้อมูลจากผู้ใช้ (รับเฉพาะ 2 ค่าหลัก)
+# ส่วนรับข้อมูลจากผู้ใช้
 st.header("1. กรอกข้อมูลทางการเงินของคุณ")
 
 col1, col2 = st.columns(2)
@@ -68,16 +68,12 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
     # คำนวณค่าตัวแปรอื่นๆ อัตโนมัติจากรายได้และรายจ่าย
     net_savings = max(0.0, monthly_income - monthly_expenditure)
     savings_ratio = net_savings / monthly_income if monthly_income > 0 else 0.0
-    savings_ratio = min(0.6, savings_ratio)  # คุมไม่ให้เกิน 0.6 ตามขอบเขตโมเดล
+    savings_ratio = min(0.6, savings_ratio)
 
-    investment_amount = (
-        net_savings * 3
-    )  # สมมติเงินทุนพร้อมลงเท่ากับเงินออม 3 เดือน
-    debt_to_income = min(
-        0.7, monthly_expenditure / monthly_income
-    )  # ประเมิน DTI เบื้องต้น
+    investment_amount = net_savings * 3
+    debt_to_income = min(0.7, monthly_expenditure / monthly_income)
 
-    # ค่ามาตรฐานกลางๆ (Default Value) สำหรับค่าอื่นๆ
+    # ค่ามาตรฐานกลางๆ สำหรับค่าอื่นๆ
     market_volatility = 30.0
     inflation_rate = 4.0
     credit_score = 700.0
@@ -123,6 +119,24 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
         "คะแนนคำแนะนำทางการเงิน/การลงทุน (Recommendation Score)",
         f"{pred_score:.2f} / 100",
     )
+
+    # แสดงคำอธิบายความหมายของคะแนนที่ประเมินได้
+    with st.expander("❓ คะแนนนี้คืออะไร และหมายความว่าอย่างไร?", expanded=True):
+        st.write("""
+        **คะแนนคำแนะนำทางการเงิน (Recommendation Score)** คือ ดัชนีวัดระดับความพร้อมและความเสถียรทางการเงินส่วนบุคคล ที่ประเมินจากสภาพคล่อง เงินออม และสัดส่วนค่าใช้จ่ายของคุณ:
+        """)
+        if pred_score >= 70:
+            st.write(
+                f"👉 **คะแนนของคุณคือ {pred_score:.2f} (ความพร้อมสูง):** สภาพคล่องทางการเงินและเงินออมดีเยี่ยม มีความพร้อมในการนำเงินทุนไปลงทุนต่อยอดเพื่อรับผลตอบแทนสูงขึ้น"
+            )
+        elif pred_score >= 45:
+            st.write(
+                f"👉 **คะแนนของคุณคือ {pred_score:.2f} (ความพร้อมปานกลาง):** มีสภาพคล่องในระดับปานกลาง เหมาะกับการทำอาชีพเสริมที่เน้นใช้ทักษะ/ความสามารถ โดยไม่ต้องใช้เงินก้อนใหญ่ในการลงทุนเพื่อลดความเสี่ยง"
+            )
+        else:
+            st.write(
+                f"👉 **คะแนนของคุณคือ {pred_score:.2f} (เน้นความปลอดภัย):** ควรเน้นรักษาความเสถียรทางการเงินเป็นหลัก เลือกอาชีพเสริมที่ไม่ต้องใช้เงินลงทุนเลย เพื่อสร้างรายได้เพิ่มโดยไม่เพิ่มภาระหนี้สิน"
+            )
 
     st.write("---")
     st.header("💡 อาชีพเสริมที่เหมาะสมกับระดับคะแนนของคุณ")
