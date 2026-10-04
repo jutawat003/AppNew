@@ -48,54 +48,45 @@ def load_model():
 
 model = load_model()
 
-# ส่วนรับข้อมูลจากผู้ใช้
+# ส่วนรับข้อมูลจากผู้ใช้ (รับเฉพาะ 2 ค่าหลัก)
 st.header("1. กรอกข้อมูลทางการเงินของคุณ")
+
 col1, col2 = st.columns(2)
 
 with col1:
     monthly_income = st.number_input(
-        "รายได้ต่อเดือน (Monthly Income)", value=80000.0, step=1000.0
-    )
-    monthly_expenditure = st.number_input(
-        "ค่าใช้จ่ายต่อเดือน (Monthly Expenditure)", value=40000.0, step=1000.0
-    )
-    market_volatility = st.slider(
-        "ระดับความผันผวนของตลาดที่ยอมรับได้ (Market Volatility)",
-        10.0,
-        80.0,
-        30.0,
-    )
-    inflation_rate = st.slider(
-        "อัตราเงินเฟ้อปัจจุบัน (%)", 2.0, 8.0, 4.0, step=0.1
-    )
-    investment_amount = st.number_input(
-        "เงินทุนที่พร้อมลงทุน (Investment Amount)", value=50000.0, step=1000.0
-    )
-    savings_ratio = st.slider(
-        "สัดส่วนเงินออม (Savings Ratio)", 0.0, 0.6, 0.3, step=0.01
+        "รายได้ต่อเดือน (บาท)", value=30000.0, step=1000.0
     )
 
 with col2:
-    credit_score = st.slider("คะแนนเครดิต (Credit Score)", 550, 850, 700)
-    debt_to_income = st.slider(
-        "อัตราส่วนหนี้สินต่อรายได้ (DTI)", 0.1, 0.7, 0.3, step=0.01
-    )
-    risk_tolerance = st.slider(
-        "ระดับการยอมรับความเสี่ยง (Risk Tolerance)", 0.0, 1.0, 0.5, step=0.01
-    )
-    economic_sentiment = st.slider(
-        "มุมมองต่อเศรษฐกิจ (Economic Sentiment)", -1.0, 1.0, 0.0, step=0.05
-    )
-    investor_confidence = st.slider(
-        "ระดับความเชื่อมั่นในการลงทุน", 0.0, 100.0, 50.0, step=1.0
-    )
-    financial_stability = st.slider(
-        "ดัชนีความเสถียรทางการเงินส่วนบุคคล", 0.3, 0.8, 0.6, step=0.01
+    monthly_expenditure = st.number_input(
+        "ค่าใช้จ่ายต่อเดือน (บาท)", value=18000.0, step=1000.0
     )
 
 # ปุ่มคำนวณผล
 if st.button("🚀 วิเคราะห์ผลและแนะนำอาชีพเสริม"):
-    # 1. จัดเตรียมข้อมูล Input
+    # คำนวณค่าตัวแปรอื่นๆ อัตโนมัติจากรายได้และรายจ่าย
+    net_savings = max(0.0, monthly_income - monthly_expenditure)
+    savings_ratio = net_savings / monthly_income if monthly_income > 0 else 0.0
+    savings_ratio = min(0.6, savings_ratio)  # คุมไม่ให้เกิน 0.6 ตามขอบเขตโมเดล
+
+    investment_amount = (
+        net_savings * 3
+    )  # สมมติเงินทุนพร้อมลงเท่ากับเงินออม 3 เดือน
+    debt_to_income = min(
+        0.7, monthly_expenditure / monthly_income
+    )  # ประเมิน DTI เบื้องต้น
+
+    # ค่ามาตรฐานกลางๆ (Default Value) สำหรับค่าอื่นๆ
+    market_volatility = 30.0
+    inflation_rate = 4.0
+    credit_score = 700.0
+    risk_tolerance = 0.5
+    economic_sentiment = 0.0
+    investor_confidence = 50.0
+    financial_stability = 0.6
+
+    # 1. จัดเตรียมข้อมูล Input 12 ค่า
     X_input = np.array([[
         monthly_income,
         monthly_expenditure,
@@ -111,7 +102,7 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
         financial_stability,
     ]])
 
-    # 2. สร้าง Orange Table โดยส่งเฉพาะ Attributes (ไม่รวม Class) แล้วเติม Dummy Class
+    # 2. สร้าง Orange Table
     if model.domain.class_vars:
         Y_dummy = np.array([[0.0]])
         input_orange_table = Orange.data.Table.from_numpy(
