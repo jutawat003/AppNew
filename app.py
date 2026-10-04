@@ -1,3 +1,4 @@
+import glob
 import os
 import numpy as np
 import pandas as pd
@@ -15,21 +16,38 @@ st.write(
     "ระบบประเมินจากโมเดล Linear Regression ที่เทรนจาก Orange Data Mining"
 )
 
-# หาตำแหน่ง Directory ปัจจุบันของไฟล์ app.py
+# หาตำแหน่ง Directory ปัจจุบัน
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "linear_model.pkds")
 DATASET_PATH = os.path.join(BASE_DIR, "Financial_Planning_Dataset.csv")
+
+
+# ฟังก์ชั่นค้นหาไฟล์โมเดลอัตโนมัติ
+def find_model_file():
+    # ค้นหาไฟล์ .pkds, .pkcls หรือ .pkl ทุกชื่อในโฟลเดอร์
+    candidates = (
+        glob.glob(os.path.join(BASE_DIR, "*.pkds"))
+        + glob.glob(os.path.join(BASE_DIR, "*.pkcls"))
+        + glob.glob(os.path.join(BASE_DIR, "*.pkl"))
+        + glob.glob(os.path.join(BASE_DIR, "*.sav"))
+    )
+    if candidates:
+        return candidates[0]
+    return None
 
 
 # โหลดโมเดล Orange
 @st.cache_resource
 def load_model():
-    if not os.path.exists(MODEL_PATH):
+    model_path = find_model_file()
+    if not model_path:
+        # แสดงรายการไฟล์ทั้งหมดที่มีอยู่ใน Directory เพื่อช่วยเช็ก
+        all_files = os.listdir(BASE_DIR)
         st.error(
-            f"❌ หาไฟล์โมเดลไม่พบ! กรุณาตรวจสอบว่ามีไฟล์ 'linear_model.pkds' อยู่ใน Repository บน GitHub หรือไม่"
+            f"❌ หาไฟล์โมเดลไม่พบ! รายชื่อไฟล์ทั้งหมดใน Repo ปัจจุบันคือ: {all_files}"
         )
         st.stop()
-    with open(MODEL_PATH, "rb") as f:
+
+    with open(model_path, "rb") as f:
         model = pickle.load(f)
     return model
 
