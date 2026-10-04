@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import streamlit as st
+import Orange
 
 # ตั้งค่าหน้าเว็บ Streamlit
 st.set_page_config(
@@ -10,14 +11,14 @@ st.set_page_config(
 
 st.title("💼 AI แนะนำอาชีพเสริมที่เหมาะสมตามศักยภาพทางการเงิน")
 st.write(
-    "ระบบประเมินจากโมเดล Linear Regression ($R^2 = 0.953$) ที่เทรนจาก Orange Data Mining"
+    "ระบบประเมินจากโมเดล Linear Regression ที่เทรนจาก Orange Data Mining"
 )
 
 
-# โหลดโมเดล
+# โหลดโมเดล Orange
 @st.cache_resource
 def load_model():
-    with open("linear_model.pkcls", "rb") as f:
+    with open("linear_model.pkds", "rb") as f:
         model = pickle.load(f)
     return model
 
@@ -71,7 +72,7 @@ with col2:
 
 # ปุ่มคำนวณผล
 if st.button("🚀 วิเคราะห์ผลและแนะนำอาชีพเสริม"):
-    # รวมข้อมูลเป็น DataFrame
+    # 1. สร้าง DataFrame จากข้อมูลที่กรอกเข้า
     input_df = pd.DataFrame(
         [[
             monthly_income,
@@ -103,8 +104,13 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
         ],
     )
 
-    # ทำนายคะแนน
-    pred_score = model(input_df)[0]
+    # 2. แปลง DataFrame เป็น Orange Table โดยใช้อ้างอิงโครงสร้างจาก Dataset หลัก
+    domain_data = Orange.data.Table("Financial_Planning_Dataset.csv")
+    input_orange_table = Orange.data.Table(domain_data.domain, input_df)
+
+    # 3. ทำนายผลด้วยโมเดล
+    predictions = model(input_orange_table)
+    pred_score = float(predictions[0])
     pred_score = np.clip(pred_score, 0, 100)
 
     st.subheader("📊 ผลการวิเคราะห์")
