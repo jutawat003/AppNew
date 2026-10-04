@@ -18,12 +18,10 @@ st.write(
 
 # หาตำแหน่ง Directory ปัจจุบัน
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "Financial_Planning_Dataset.csv")
 
 
 # ฟังก์ชั่นค้นหาไฟล์โมเดลอัตโนมัติ
 def find_model_file():
-    # ค้นหาไฟล์ .pkds, .pkcls หรือ .pkl ทุกชื่อในโฟลเดอร์
     candidates = (
         glob.glob(os.path.join(BASE_DIR, "*.pkds"))
         + glob.glob(os.path.join(BASE_DIR, "*.pkcls"))
@@ -40,11 +38,7 @@ def find_model_file():
 def load_model():
     model_path = find_model_file()
     if not model_path:
-        # แสดงรายการไฟล์ทั้งหมดที่มีอยู่ใน Directory เพื่อช่วยเช็ก
-        all_files = os.listdir(BASE_DIR)
-        st.error(
-            f"❌ หาไฟล์โมเดลไม่พบ! รายชื่อไฟล์ทั้งหมดใน Repo ปัจจุบันคือ: {all_files}"
-        )
+        st.error("❌ หาไฟล์โมเดลไม่พบ!")
         st.stop()
 
     with open(model_path, "rb") as f:
@@ -133,9 +127,12 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
         ],
     )
 
-    # 2. แปลง DataFrame เป็น Orange Table โดยใช้อ้างอิงโครงสร้างจาก Dataset หลัก
-    domain_data = Orange.data.Table(DATASET_PATH)
-    input_orange_table = Orange.data.Table(domain_data.domain, input_df)
+    # 2. แปลง DataFrame เป็น Orange Table โดยใช้ Domain จากตัว Model โดยตรง
+    # (เพิ่มช่อง Target เปล่าไว้เพื่อให้โครงสร้างฟีเจอร์สมบูรณ์ตรงตามโมเดล)
+    model_domain = model.domain
+    input_orange_table = Orange.data.Table.from_numpy(
+        model_domain, input_df.values
+    )
 
     # 3. ทำนายผลด้วยโมเดล
     predictions = model(input_orange_table)
