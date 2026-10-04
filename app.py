@@ -95,44 +95,32 @@ with col2:
 
 # ปุ่มคำนวณผล
 if st.button("🚀 วิเคราะห์ผลและแนะนำอาชีพเสริม"):
-    # 1. สร้าง DataFrame จากข้อมูลที่กรอกเข้า
-    input_df = pd.DataFrame(
-        [[
-            monthly_income,
-            monthly_expenditure,
-            market_volatility,
-            inflation_rate,
-            investment_amount,
-            savings_ratio,
-            credit_score,
-            debt_to_income,
-            risk_tolerance,
-            economic_sentiment,
-            investor_confidence,
-            financial_stability,
-        ]],
-        columns=[
-            "Monthly_Income",
-            "Monthly_Expenditure",
-            "Market_Volatility_Index",
-            "Inflation_Rate",
-            "Investment_Amount",
-            "Savings_Ratio",
-            "Credit_Score",
-            "Debt_to_Income_Ratio",
-            "Risk_Tolerance_Level",
-            "Economic_Sentiment_Score",
-            "Investor_Confidence",
-            "Financial_Stability_Index",
-        ],
-    )
+    # 1. จัดเตรียมข้อมูล Input
+    X_input = np.array([[
+        monthly_income,
+        monthly_expenditure,
+        market_volatility,
+        inflation_rate,
+        investment_amount,
+        savings_ratio,
+        credit_score,
+        debt_to_income,
+        risk_tolerance,
+        economic_sentiment,
+        investor_confidence,
+        financial_stability,
+    ]])
 
-    # 2. แปลง DataFrame เป็น Orange Table โดยใช้ Domain จากตัว Model โดยตรง
-    # (เพิ่มช่อง Target เปล่าไว้เพื่อให้โครงสร้างฟีเจอร์สมบูรณ์ตรงตามโมเดล)
-    model_domain = model.domain
-    input_orange_table = Orange.data.Table.from_numpy(
-        model_domain, input_df.values
-    )
+    # 2. สร้าง Orange Table โดยส่งเฉพาะ Attributes (ไม่รวม Class) แล้วเติม Dummy Class
+    if model.domain.class_vars:
+        Y_dummy = np.array([[0.0]])
+        input_orange_table = Orange.data.Table.from_numpy(
+            model.domain, X_input, Y_dummy
+        )
+    else:
+        input_orange_table = Orange.data.Table.from_numpy(
+            model.domain, X_input
+        )
 
     # 3. ทำนายผลด้วยโมเดล
     predictions = model(input_orange_table)
