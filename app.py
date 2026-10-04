@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import pickle
@@ -14,11 +15,21 @@ st.write(
     "ระบบประเมินจากโมเดล Linear Regression ที่เทรนจาก Orange Data Mining"
 )
 
+# หาตำแหน่ง Directory ปัจจุบันของไฟล์ app.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "linear_model.pkds")
+DATASET_PATH = os.path.join(BASE_DIR, "Financial_Planning_Dataset.csv")
+
 
 # โหลดโมเดล Orange
 @st.cache_resource
 def load_model():
-    with open("linear_model.pkds", "rb") as f:
+    if not os.path.exists(MODEL_PATH):
+        st.error(
+            f"❌ หาไฟล์โมเดลไม่พบ! กรุณาตรวจสอบว่ามีไฟล์ 'linear_model.pkds' อยู่ใน Repository บน GitHub หรือไม่"
+        )
+        st.stop()
+    with open(MODEL_PATH, "rb") as f:
         model = pickle.load(f)
     return model
 
@@ -105,7 +116,7 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
     )
 
     # 2. แปลง DataFrame เป็น Orange Table โดยใช้อ้างอิงโครงสร้างจาก Dataset หลัก
-    domain_data = Orange.data.Table("Financial_Planning_Dataset.csv")
+    domain_data = Orange.data.Table(DATASET_PATH)
     input_orange_table = Orange.data.Table(domain_data.domain, input_df)
 
     # 3. ทำนายผลด้วยโมเดล
