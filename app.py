@@ -1,4 +1,3 @@
-import glob
 import os
 import numpy as np
 import pandas as pd
@@ -16,21 +15,26 @@ st.write(
     "ระบบประเมินจากโมเดล Linear Regression ร่วมกับการวิเคราะห์ความถนัดส่วนบุคคล"
 )
 
+st.warning(
+    "⚠️ ระบบนี้เป็นต้นแบบเพื่อการศึกษา คะแนนที่แสดงทำนายจากชุดข้อมูลสาธารณะที่ไม่ทราบวิธีสร้างตัวแปรตาม "
+    "จึงไม่ควรใช้เป็นคำแนะนำในการลงทุนหรือการตัดสินใจทางการเงินจริง"
+)
+
 # หาตำแหน่ง Directory ปัจจุบัน
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-# ฟังก์ชั่นค้นหาไฟล์โมเดลอัตโนมัติ
+# ไฟล์ตัวแบบที่บันทึกจาก Orange (Save Model) ระบุชื่อตรง ๆ เพื่อไม่ให้โหลดผิดไฟล์
+MODEL_FILENAME = "linear_model.pkcls"
+
+# ช่วงรายได้ของชุดข้อมูลฝึก (ตามตารางที่ 2 ของบทความ)
+TRAIN_INCOME_MIN = 30000.0
+TRAIN_INCOME_MAX = 157054.63
+
+
 def find_model_file():
-    candidates = (
-        glob.glob(os.path.join(BASE_DIR, "*.pkds"))
-        + glob.glob(os.path.join(BASE_DIR, "*.pkcls"))
-        + glob.glob(os.path.join(BASE_DIR, "*.pkl"))
-        + glob.glob(os.path.join(BASE_DIR, "*.sav"))
-    )
-    if candidates:
-        return candidates[0]
-    return None
+    path = os.path.join(BASE_DIR, MODEL_FILENAME)
+    return path if os.path.isfile(path) else None
 
 
 # โหลดโมเดล Orange
@@ -38,7 +42,7 @@ def find_model_file():
 def load_model():
     model_path = find_model_file()
     if not model_path:
-        st.error("❌ หาไฟล์โมเดลไม่พบ!")
+        st.error(f"❌ หาไฟล์ตัวแบบ {MODEL_FILENAME} ไม่พบ!")
         st.stop()
 
     with open(model_path, "rb") as f:
@@ -55,12 +59,12 @@ col1, col2 = st.columns(2)
 
 with col1:
     monthly_income = st.number_input(
-        "รายได้ต่อเดือน (บาท)", value=30000.0, step=1000.0
+        "รายได้ต่อเดือน (บาท)", min_value=1.0, value=30000.0, step=1000.0
     )
 
 with col2:
     monthly_expenditure = st.number_input(
-        "ค่าใช้จ่ายต่อเดือน (บาท)", value=18000.0, step=1000.0
+        "ค่าใช้จ่ายต่อเดือน (บาท)", min_value=0.0, value=18000.0, step=1000.0
     )
 
 # ส่วนเลือกทักษะ/ความถนัด
@@ -89,7 +93,9 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
     savings_ratio = min(0.6, savings_ratio)
 
     investment_amount = net_savings * 3
-    debt_to_income = min(0.7, monthly_expenditure / monthly_income)
+    debt_to_income = (
+        min(0.7, monthly_expenditure / monthly_income) if monthly_income > 0 else 0.7
+    )
 
     # ค่ามาตรฐานกลางๆ
     market_volatility = 30.0
@@ -130,11 +136,17 @@ if st.button("🚀 วิเคราะห์ผลและแนะนำอ�
     # 3. ทำนายผลด้วยโมเดล
     predictions = model(input_orange_table)
     pred_score = float(predictions[0])
-    pred_score = np.clip(pred_score, 0, 100)
+    pred_score = float(np.clip(pred_score, 0, 100))
 
     st.subheader("📊 ผลการวิเคราะห์สภาพทางการเงิน")
+    if not (TRAIN_INCOME_MIN <= monthly_income <= TRAIN_INCOME_MAX):
+        st.warning(
+            f"รายได้ที่กรอกอยู่นอกช่วงรายได้ของข้อมูลที่ใช้ฝึกตัวแบบ "
+            f"({TRAIN_INCOME_MIN:,.0f}–{TRAIN_INCOME_MAX:,.0f} บาท) "
+            "คะแนนที่แสดงจึงเป็นเพียงค่าประมาณนอกช่วงข้อมูล"
+        )
     st.metric(
-        "คะแนนความพร้อมทางการเงิน (Recommendation Score)",
+        "คะแนนแนะนำการลงทุนที่ทำนายได้ (Investment Recommendation Score)",
         f"{pred_score:.2f} / 100",
     )
 
