@@ -15,6 +15,19 @@ st.write(
     "ระบบประเมินจากโมเดล Linear Regression ร่วมกับการวิเคราะห์ความถนัดส่วนบุคคล"
 )
 
+# ===== ชั่วคราว: แสดงเวอร์ชันที่ใช้จริง (จดค่าแล้วลบบล็อกนี้ออกก่อนถ่ายภาพและก่อนส่ง) =====
+import sys
+import importlib.metadata as md
+
+_lines = [f"Python {sys.version.split()[0]}"]
+for _p in ["streamlit", "pandas", "numpy", "scikit-learn", "orange3", "pyarrow"]:
+    try:
+        _lines.append(f"{_p}=={md.version(_p)}")
+    except Exception:
+        _lines.append(f"{_p} (ไม่พบ)")
+st.code("\n".join(_lines))
+# ===== จบบล็อกชั่วคราว =====
+
 st.warning(
     "⚠️ ระบบนี้เป็นต้นแบบเพื่อการศึกษา คะแนนที่แสดงทำนายจากชุดข้อมูลสาธารณะที่ไม่ทราบวิธีสร้างตัวแปรตาม "
     "จึงไม่ควรใช้เป็นคำแนะนำในการลงทุนหรือการตัดสินใจทางการเงินจริง"
